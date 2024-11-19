@@ -2,12 +2,11 @@ package main
 
 import (
 	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"my_education/go/go_final_project/internal/handlers"
 	"net/http"
 	"os"
-
-	_ "github.com/mattn/go-sqlite3"
-	"my_education/go/go_final_project/internal/handlers"
 )
 
 const testPort = "7540"
@@ -61,8 +60,9 @@ func startServer(port string, db *sql.DB) error {
 
 	// Регистрируем обработчики для API
 	http.HandleFunc("/api/nextdate", handlers.NextDateHandler)
-	http.Handle("/api/task", handlers.AddTaskHandler(db))
-
+	http.HandleFunc("/api/task", handlers.TaskHandler(db))
+	http.Handle("/api/tasks", handlers.GetTasksHandler(db))
+	http.HandleFunc("/api/task/done", handlers.MarkTaskDoneHandler(db))
 	log.Printf("Сервер запущен - порт %s\n", port)
 	return http.ListenAndServe(":"+port, nil)
 }
