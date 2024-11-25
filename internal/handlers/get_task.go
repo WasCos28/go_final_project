@@ -23,9 +23,9 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 			query = `SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?`
 			args = append(args, limit)
 		} else {
-			// Проверяем, соответствует ли параметр формату даты
+			// Проверка: соответствует ли параметр формату даты
 			if parsedDate, err := time.Parse("02.01.2006", search); err == nil {
-				// Формат даты 02.01.2006 преобразуем в 20060102
+				// Дату 02.01.2006 преобразуем в 20060102
 				formattedDate := parsedDate.Format("20060102")
 				query = `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ?`
 				args = append(args, formattedDate, limit)

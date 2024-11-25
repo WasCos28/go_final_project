@@ -58,11 +58,12 @@ func startServer(port string, db *sql.DB) error {
 	fs := http.FileServer(http.Dir(webDir))
 	http.Handle("/", fs)
 
-	// Регистрируем обработчики для API
+	// Регистрация обработчиков для API
 	http.HandleFunc("/api/nextdate", handlers.NextDateHandler)
 	http.HandleFunc("/api/task", handlers.TaskHandler(db))
 	http.Handle("/api/tasks", handlers.GetTasksHandler(db))
 	http.HandleFunc("/api/task/done", handlers.MarkTaskDoneHandler(db))
+
 	log.Printf("Сервер запущен - порт %s\n", port)
 	return http.ListenAndServe(":"+port, nil)
 }
@@ -70,14 +71,14 @@ func startServer(port string, db *sql.DB) error {
 func main() {
 	dbFile := "scheduler.db"
 
-	// Инициализируем базу данных
+	// Инициализия бд
 	db, err := setupDatabase(dbFile)
 	if err != nil {
 		log.Fatalf("Ошибка при настройке базы данных: %v\n", err)
 	}
 	defer db.Close()
 
-	// Устанавливаем порт для сервера
+	// Установка порта для сервера
 	port := os.Getenv("TODO_PORT")
 	if port == "" {
 		port = testPort

@@ -68,7 +68,7 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		// Вставляем задачу в базу данных
+		// Передаем задачу в бд
 		query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)"
 		res, err := db.Exec(query, taskDate.Format("20060102"), task.Title, task.Comment, task.Repeat)
 		if err != nil {
@@ -90,7 +90,7 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// GetTaskHandler обрабатывает GET-запросы для получения задачи по идентификатору.
+// GetTaskHandler обрабатывает GET-запросы для получения задачи по id.
 func GetTaskHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Проверяем метод запроса
@@ -166,7 +166,7 @@ func UpdateTaskHandler(db *sql.DB) http.HandlerFunc {
 			taskDate = time.Now().Truncate(24 * time.Hour)
 		}
 
-		// Проверяем валидность repeat, используя logic.NextDate
+		// Проверяем валидность repeat
 		if task.Repeat != "" {
 			_, err := logic.NextDate(taskDate, task.Date, task.Repeat)
 			if err != nil {
@@ -175,7 +175,7 @@ func UpdateTaskHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		// Обновляем задачу в базе данных
+		// Обновляем задачу в бд
 		query := "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?"
 		res, err := db.Exec(query, taskDate.Format("20060102"), task.Title, task.Comment, task.Repeat, task.ID)
 		if err != nil {
@@ -207,7 +207,7 @@ func DeleteTaskHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Удаляем задачу из базы данных
+		// Удаляем задачу из бд
 		deleteQuery := "DELETE FROM scheduler WHERE id = ?"
 		res, err := db.Exec(deleteQuery, taskID)
 		if err != nil {
