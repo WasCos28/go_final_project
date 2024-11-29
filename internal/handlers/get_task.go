@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"my_education/go/go_final_project/internal/logic"
+	"my_education/go/go_final_project/tests"
 )
 
 const LimitDefault = 50
@@ -24,19 +26,25 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 
 		if search == "" {
 			// Запрос для получения всех задач без фильтрации
-			query = `SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?`
+			query = "SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?"
 			args = append(args, limit)
 		} else {
 			// Проверка: соответствует ли параметр формату даты
 			if parsedDate, err := time.Parse("02.01.2006", search); err == nil {
 				// Дату 02.01.2006 преобразуем в 20060102
 				formattedDate := parsedDate.Format(logic.FormatDate)
-				query = `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ?`
+				query = "SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ?"
 				args = append(args, formattedDate, limit)
 			} else {
 				// Ищем по заголовку и комментарию с использованием LIKE
-				likePattern := "%" + search + "%"
-				query = `SELECT id, date, title, comment, repeat FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`
+				var likePattern string
+				if tests.AllowWildcardSearch {
+					// Заменяем * на % для поддержки wildcard
+					likePattern = "%" + strings.ReplaceAll(search, "*", "%") + "%"
+				} else {
+					likePattern = "%" + search + "%"
+				}
+				query = "SELECT id, date, title, comment, repeat FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?"
 				args = append(args, likePattern, likePattern, limit)
 			}
 		}
@@ -58,7 +66,6 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 			if err != nil {
 				http.Error(w, `{"error":"Ошибка при чтении данных"}`, http.StatusInternalServerError)
 				log.Printf("Ошибка при чтении данных: %v", err)
-
 				return
 			}
 			tasks = append(tasks, task)
