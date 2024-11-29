@@ -46,7 +46,7 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 		if task.Date == "" {
 			taskDate = time.Now().Truncate(24 * time.Hour)
 		} else {
-			taskDate, err = time.Parse("20060102", task.Date)
+			taskDate, err = time.Parse(logic.FormatDate, task.Date)
 			if err != nil {
 				http.Error(w, `{"error":"Дата указана в неверном формате"}`, http.StatusBadRequest)
 				return
@@ -64,13 +64,13 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 					http.Error(w, fmt.Sprintf(`{"error":"%v"}`, err), http.StatusBadRequest)
 					return
 				}
-				taskDate, _ = time.Parse("20060102", taskDateStr)
+				taskDate, _ = time.Parse(logic.FormatDate, taskDateStr)
 			}
 		}
 
 		// Передаем задачу в бд
 		query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)"
-		res, err := db.Exec(query, taskDate.Format("20060102"), task.Title, task.Comment, task.Repeat)
+		res, err := db.Exec(query, taskDate.Format(logic.FormatDate), task.Title, task.Comment, task.Repeat)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при добавлении задачи: %v"}`, err), http.StatusInternalServerError)
 			return
@@ -157,7 +157,7 @@ func UpdateTaskHandler(db *sql.DB) http.HandlerFunc {
 		// Проверяем и валидируем поле date
 		var taskDate time.Time
 		if task.Date != "" {
-			taskDate, err = time.Parse("20060102", task.Date)
+			taskDate, err = time.Parse(logic.FormatDate, task.Date)
 			if err != nil {
 				http.Error(w, `{"error":"Дата указана в неверном формате"}`, http.StatusBadRequest)
 				return
@@ -177,7 +177,7 @@ func UpdateTaskHandler(db *sql.DB) http.HandlerFunc {
 
 		// Обновляем задачу в бд
 		query := "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?"
-		res, err := db.Exec(query, taskDate.Format("20060102"), task.Title, task.Comment, task.Repeat, task.ID)
+		res, err := db.Exec(query, taskDate.Format(logic.FormatDate), task.Title, task.Comment, task.Repeat, task.ID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при обновлении задачи: %v"}`, err), http.StatusInternalServerError)
 			return

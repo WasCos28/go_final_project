@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"my_education/go/go_final_project/internal/logic"
 	"net/http"
 	"time"
 )
@@ -26,7 +27,7 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 			// Проверка: соответствует ли параметр формату даты
 			if parsedDate, err := time.Parse("02.01.2006", search); err == nil {
 				// Дату 02.01.2006 преобразуем в 20060102
-				formattedDate := parsedDate.Format("20060102")
+				formattedDate := parsedDate.Format(logic.FormatDate)
 				query = `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ?`
 				args = append(args, formattedDate, limit)
 			} else {

@@ -8,10 +8,13 @@ import (
 	"time"
 )
 
+// FormatDate формат даты для проекта (YYYYMMDD)
+const FormatDate = "20060102"
+
 // NextDate рассчитывает следующую дату для выполнения задачи с учетом базовых правил повторения.
 func NextDate(now time.Time, date string, repeat string) (string, error) {
 	// Парсим входную дату в формат времени
-	startDate, err := time.Parse("20060102", date)
+	startDate, err := time.Parse(FormatDate, date)
 	if err != nil {
 		return "", fmt.Errorf("не удалось разобрать дату: %v", err)
 	}
@@ -27,7 +30,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 		for !nextDate.After(now) {
 			nextDate = nextDate.AddDate(1, 0, 0)
 		}
-		return nextDate.Format("20060102"), nil
+		return nextDate.Format(FormatDate), nil
 	}
 
 	// Обработка правила "d <число>"
@@ -56,7 +59,7 @@ func NextDate(now time.Time, date string, repeat string) (string, error) {
 			}
 		}
 
-		return nextDate.Format("20060102"), nil
+		return nextDate.Format(FormatDate), nil
 	}
 
 	// Возвращаем ошибку для неподдерживаемых форматов

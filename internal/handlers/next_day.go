@@ -14,7 +14,7 @@ func NextDateHandler(w http.ResponseWriter, r *http.Request) {
 	repeat := r.FormValue("repeat")
 
 	// Парсим дату now из строки
-	now, err := time.Parse("20060102", nowStr)
+	now, err := time.Parse(logic.FormatDate, nowStr)
 	if err != nil {
 		http.Error(w, "некорректная дата now", http.StatusBadRequest)
 		return
