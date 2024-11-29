@@ -1,21 +1,17 @@
-FROM ubuntu:latest
-
-RUN apt-get update && apt-get install -y \
-    golang-go \
-    git \
-    build-essential && \
-    apt-get clean
+FROM golang:1.20-alpine
 
 WORKDIR /app
 
 COPY . .
 
-RUN go build -o todo-app main.go
+RUN go mod tidy
 
-EXPOSE 7540
+RUN go build -o todo-app main.go
 
 ENV TODO_PORT=7540 \
     TODO_DBFILE=/app/scheduler.db \
     TODO_PASSWORD=secret
 
-CMD ["./todo-app"]
+EXPOSE ${TODO_PORT}
+
+CMD ["sh", "-c", "./todo-app -port ${TODO_PORT}"]
