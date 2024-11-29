@@ -3,9 +3,10 @@ package handlers
 import (
 	"database/sql"
 	"log"
-	"my_education/go/go_final_project/internal/logic"
 	"net/http"
 	"time"
+
+	"my_education/go/go_final_project/internal/logic"
 )
 
 // MarkTaskDoneHandler обрабатывает POST-запрос для отметки задачи как выполненной

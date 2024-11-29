@@ -2,11 +2,13 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
-	"my_education/go/go_final_project/internal/handlers"
 	"net/http"
 	"os"
+
+	_ "github.com/mattn/go-sqlite3"
+
+	"my_education/go/go_final_project/internal/handlers"
 )
 
 const testPort = "7540"

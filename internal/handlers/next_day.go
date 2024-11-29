@@ -3,9 +3,10 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"my_education/go/go_final_project/internal/logic" // Путь к вашему пакету с функцией NextDate
 	"net/http"
 	"time"
+
+	"my_education/go/go_final_project/internal/logic"
 )
 
 // NextDateHandler обрабатывает запросы на вычисление следующей даты.
