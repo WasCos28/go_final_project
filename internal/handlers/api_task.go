@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
+	"log"
 	"my_education/go/go_final_project/internal/logic"
 	"net/http"
 	"time"
@@ -17,10 +17,12 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
+// AddTaskHandler обрабатывает запросы на добавление новой задачи
 func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Проверяем, что запрос выполнен методом POST
+		// Проверяем метод запроса
 		if r.Method != http.MethodPost {
+			log.Println("Ошибка: поддерживается только метод POST")
 			http.Error(w, `{"error":"только метод POST поддерживается"}`, http.StatusMethodNotAllowed)
 			return
 		}
@@ -31,12 +33,14 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&task)
 		if err != nil {
+			log.Printf("Ошибка десериализации JSON: %v", err)
 			http.Error(w, `{"error":"ошибка десериализации JSON"}`, http.StatusBadRequest)
 			return
 		}
 
 		// Проверяем обязательное поле title
 		if task.Title == "" {
+			log.Println("Ошибка: Не указан заголовок задачи")
 			http.Error(w, `{"error":"Не указан заголовок задачи"}`, http.StatusBadRequest)
 			return
 		}
@@ -48,6 +52,7 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 		} else {
 			taskDate, err = time.Parse(logic.FormatDate, task.Date)
 			if err != nil {
+				log.Printf("Ошибка: Дата указана в неверном формате (%v)", err)
 				http.Error(w, `{"error":"Дата указана в неверном формате"}`, http.StatusBadRequest)
 				return
 			}
@@ -61,32 +66,41 @@ func AddTaskHandler(db *sql.DB) http.HandlerFunc {
 			} else {
 				taskDateStr, err := logic.NextDate(now, task.Date, task.Repeat)
 				if err != nil {
-					http.Error(w, fmt.Sprintf(`{"error":"%v"}`, err), http.StatusBadRequest)
+					log.Printf("Ошибка при расчете следующей даты: %v", err)
+					http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
 					return
 				}
 				taskDate, _ = time.Parse(logic.FormatDate, taskDateStr)
 			}
 		}
 
-		// Передаем задачу в бд
+		// Передаем задачу в БД
 		query := "INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)"
 		res, err := db.Exec(query, taskDate.Format(logic.FormatDate), task.Title, task.Comment, task.Repeat)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при добавлении задачи: %v"}`, err), http.StatusInternalServerError)
+			log.Printf("Ошибка при добавлении задачи: %v", err)
+			http.Error(w, `{"error":"Ошибка при добавлении задачи"}`, http.StatusInternalServerError)
 			return
 		}
 
 		// Получаем ID вставленной записи
 		id, err := res.LastInsertId()
 		if err != nil {
+			log.Printf("Ошибка при получении идентификатора задачи: %v", err)
 			http.Error(w, `{"error":"Ошибка при получении идентификатора задачи"}`, http.StatusInternalServerError)
 			return
 		}
 
 		// Отправляем успешный ответ
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		response := fmt.Sprintf(`{"id":"%d"}`, id)
-		fmt.Fprintln(w, response)
+		response := map[string]interface{}{"id": id}
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Printf("Ошибка при отправке ответа: %v", err)
+			http.Error(w, `{"error":"Ошибка при формировании ответа"}`, http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Задача успешно добавлена: ID=%d", id)
 	}
 }
 
@@ -114,7 +128,8 @@ func GetTaskHandler(db *sql.DB) http.HandlerFunc {
 			http.Error(w, `{"error":"Задача не найдена"}`, http.StatusNotFound)
 			return
 		} else if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при выполнении запроса: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при выполнении запроса"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка выполнения запроса: %v", err)
 			return
 		}
 
@@ -170,7 +185,8 @@ func UpdateTaskHandler(db *sql.DB) http.HandlerFunc {
 		if task.Repeat != "" {
 			_, err := logic.NextDate(taskDate, task.Date, task.Repeat)
 			if err != nil {
-				http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+				http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+				log.Printf("Ошибка валидации задачи: %v", err)
 				return
 			}
 		}
@@ -179,7 +195,8 @@ func UpdateTaskHandler(db *sql.DB) http.HandlerFunc {
 		query := "UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?"
 		res, err := db.Exec(query, taskDate.Format(logic.FormatDate), task.Title, task.Comment, task.Repeat, task.ID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при обновлении задачи: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при обновлении задачи"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка при обновлении задачи: %v", err)
 			return
 		}
 
@@ -211,14 +228,16 @@ func DeleteTaskHandler(db *sql.DB) http.HandlerFunc {
 		deleteQuery := "DELETE FROM scheduler WHERE id = ?"
 		res, err := db.Exec(deleteQuery, taskID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при удалении задачи: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка при удалении задачи: %v", err)
 			return
 		}
 
 		// Проверяем, была ли удалена задача
 		rowsAffected, err := res.RowsAffected()
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при проверке результата удаления: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при проверке результата удаления"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка при проверке результата удаления: %v", err)
 			return
 		}
 		if rowsAffected == 0 {

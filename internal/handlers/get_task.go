@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
+	"log"
 	"my_education/go/go_final_project/internal/logic"
 	"net/http"
 	"time"
@@ -41,7 +41,8 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 		// Выполняем запрос
 		rows, err := db.Query(query, args...)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при выполнении запроса: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при выполнении запроса"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка выполнения запроса: %v", err)
 			return
 		}
 		defer rows.Close()
@@ -52,7 +53,9 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 			var task Task
 			err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 			if err != nil {
-				http.Error(w, fmt.Sprintf(`{"error":"Ошибка при чтении данных: %v"}`, err), http.StatusInternalServerError)
+				http.Error(w, `{"error":"Ошибка при чтении данных"}`, http.StatusInternalServerError)
+				log.Printf("Ошибка при чтении данных: %v", err)
+
 				return
 			}
 			tasks = append(tasks, task)
@@ -60,7 +63,8 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 
 		// Проверяем ошибки после цикла чтения
 		if err := rows.Err(); err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при чтении строк: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при чтении строк"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка при чтении строк: %v", err)
 			return
 		}
 

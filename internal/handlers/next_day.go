@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"my_education/go/go_final_project/internal/logic" // Путь к вашему пакету с функцией NextDate
 	"net/http"
 	"time"
@@ -23,8 +24,8 @@ func NextDateHandler(w http.ResponseWriter, r *http.Request) {
 	// Вызываем функцию для получения следующей даты
 	nextDate, err := logic.NextDate(now, date, repeat)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("ошибка: %v", err), http.StatusBadRequest)
-		return
+		http.Error(w, "ошибка: "+err.Error(), http.StatusBadRequest)
+		log.Printf("Ошибка при обработке next_day: %v", err)
 	}
 
 	// Возвращаем результат в формате текста

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 	"my_education/go/go_final_project/internal/logic"
 	"net/http"
 	"time"
@@ -26,7 +26,9 @@ func MarkTaskDoneHandler(db *sql.DB) http.HandlerFunc {
 			if err == sql.ErrNoRows {
 				http.Error(w, `{"error":"Задача не найдена"}`, http.StatusNotFound)
 			} else {
-				http.Error(w, fmt.Sprintf(`{"error":"Ошибка при получении задачи: %v"}`, err), http.StatusInternalServerError)
+				http.Error(w, `{"error":"Ошибка при получении задачи"}`, http.StatusInternalServerError)
+				log.Printf("Ошибка при получении задачи: %v", err)
+				return
 			}
 			return
 		}
@@ -36,7 +38,8 @@ func MarkTaskDoneHandler(db *sql.DB) http.HandlerFunc {
 			deleteQuery := "DELETE FROM scheduler WHERE id = ?"
 			_, err := db.Exec(deleteQuery, taskID)
 			if err != nil {
-				http.Error(w, fmt.Sprintf(`{"error":"Ошибка при удалении задачи: %v"}`, err), http.StatusInternalServerError)
+				http.Error(w, `{"error":"Ошибка при удалении задачи"}`, http.StatusInternalServerError)
+				log.Printf("Ошибка при удалении задачи: %v", err)
 				return
 			}
 
@@ -51,7 +54,8 @@ func MarkTaskDoneHandler(db *sql.DB) http.HandlerFunc {
 		now := time.Now()
 		nextDate, err := logic.NextDate(now, task.Date, task.Repeat)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+			http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+			log.Printf("Ошибка валидации задачи: %v", err)
 			return
 		}
 
@@ -59,7 +63,8 @@ func MarkTaskDoneHandler(db *sql.DB) http.HandlerFunc {
 		updateQuery := "UPDATE scheduler SET date = ? WHERE id = ?"
 		_, err = db.Exec(updateQuery, nextDate, taskID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error":"Ошибка при обновлении задачи: %v"}`, err), http.StatusInternalServerError)
+			http.Error(w, `{"error":"Ошибка при обновлении задачи"}`, http.StatusInternalServerError)
+			log.Printf("Ошибка при обновлении задачи: %v", err)
 			return
 		}
 
