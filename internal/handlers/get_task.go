@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const LimitDefault = 50
+
 func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -17,7 +19,7 @@ func GetTasksHandler(db *sql.DB) http.HandlerFunc {
 		search := r.URL.Query().Get("search")
 		var query string
 		var args []interface{}
-		limit := 50 // Ограничение на количество записей
+		limit := LimitDefault // Ограничение на количество записей
 
 		if search == "" {
 			// Запрос для получения всех задач без фильтрации
